@@ -7,6 +7,9 @@
     "dev": "bun --watch src/index.ts",
     "postinstall": "bunx prisma generate"
   },
+  "prisma": {
+    "seed": "bun prisma/seed/seed.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.6",

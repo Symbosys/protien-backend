@@ -16,6 +16,7 @@ export const uploadToCloudinary = (
   fileBuffer: Buffer,
   folder: string
 ): Promise<{ public_id: string; secure_url: string }> => {
+  console.log("[DEBUG] uploadToCloudinary config:", cloudinary.config());
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder },
@@ -43,6 +44,17 @@ export const uploadToCloudinary = (
 
     // Create a readable stream from the file buffer and pipe it to the upload stream
     const stream = Readable.from(fileBuffer);
+    
+    stream.on('error', (err) => {
+      console.error("[DEBUG] Readable stream error:", err);
+      reject(new Error("Readable stream error: " + err.message));
+    });
+    
+    uploadStream.on('error', (err) => {
+      console.error("[DEBUG] Cloudinary upload stream error:", err);
+      reject(new Error("Cloudinary upload stream error: " + err.message));
+    });
+
     stream.pipe(uploadStream);
   });
 };

@@ -82,7 +82,7 @@ export const getAllProducts = asyncHandler(async (req, res, next) => {
         minPrice,
         maxPrice,
         search,
-        brand,
+        brandId,
         page = "1",
         limit = "20",
         sort = "newest",
@@ -106,8 +106,8 @@ export const getAllProducts = asyncHandler(async (req, res, next) => {
     }
 
     // Brand filter
-    if (brand) {
-        where.brand = brand as string;
+    if (brandId) {
+        where.brandId = brandId as string;
     }
 
     // Search across name, description, brand, and category name
@@ -116,7 +116,7 @@ export const getAllProducts = asyncHandler(async (req, res, next) => {
         where.OR = [
             { name: { contains: searchStr } },
             { description: { contains: searchStr } },
-            { brand: { contains: searchStr } },
+            { brand: { name: { contains: searchStr } } },
             { category: { name: { contains: searchStr } } },
         ];
     }

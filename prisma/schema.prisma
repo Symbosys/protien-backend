@@ -91,6 +91,24 @@ model SubCategory {
   @@index([categoryId]) // Recommended index for performance
 }
 
+model Brand {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  logo        String?  @db.LongText
+  website     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("brands")
+}
+
 model Product {
   id          String  @id @default(uuid())
   name        String
@@ -98,7 +116,8 @@ model Product {
   image       String  @db.LongText
   images      Json? // Storage for multiple image URLs
 
-  brand             String?
+  brandId           String?
+  brand             Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
   price             Decimal  @db.Decimal(15, 2)
   discountPrice     Decimal? @db.Decimal(15, 2)
   quantity          Int      @default(0)
@@ -140,6 +159,7 @@ model Product {
 
   @@index([categoryId])
   @@index([subCategoryId])
+  @@index([brandId])
 }
 
 model Cart {

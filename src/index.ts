@@ -17,6 +17,7 @@ import couponrouter from "./coupon/routes/coupon.routes";
 import chatsessionrouter from "./module/chatSession/routes/chatSession.routes.js";
 import reviewrouter from "./module/review/routes/review.routes";
 import offerrouter from "./module/offer/routes/offer.routes.js";
+import brandrouter from "./module/brand/routes/brand.routes.js";
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/coupon", couponrouter)
 app.use("/api/chat", chatsessionrouter)
 app.use("/api/review", reviewrouter)
 app.use("/api/offer", offerrouter)
+app.use("/api/brand", brandrouter)
 
 app.use(errorMiddleware);
 app.listen(4000, () => console.log("Server running on port 4000"));

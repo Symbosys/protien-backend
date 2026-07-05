@@ -14,7 +14,7 @@ export const createProductSchema = z.object({
     description: z.string().max(2000, "Description is too long").trim().optional(),
     image: z.string().min(1, "Main image is required"),
     images: z.array(z.string()).max(10, "Maximum 10 images allowed").optional(),
-    brand: z.string().max(100, "Brand name is too long").trim().optional(),
+    brandId: z.string().uuid("Brand ID must be a valid UUID").optional().nullable(),
     price: z.number().min(0, "Price must be non-negative").max(9999999999999, "Price is too large"),
     discountPrice: z.number().min(0).max(9999999999999, "Discount price is too large").optional(),
     quantity: z.number().int().min(0).default(0),
