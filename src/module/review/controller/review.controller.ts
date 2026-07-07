@@ -1,4 +1,4 @@
-import type { Prisma } from "../../../../generated/prisma.js";
+import type { Prisma } from "../../../../generated/prisma/index.js";
 import prisma from "../../../config/prisma.js";
 import { asyncHandler } from "../../../middleware/error.middleware.js";
 import { ErrorResponse, SuccessResponse } from "../../../utils/response.utils.js";
