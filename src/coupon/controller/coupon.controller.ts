@@ -1,7 +1,7 @@
-import prisma from "../../config/prisma";
-import { asyncHandler } from "../../middleware/error.middleware";
-import { couponValidator } from "../validator/coupon.validation";
-import { SuccessResponse, ErrorResponse } from "../../utils/response.utils";
+import prisma from "../../config/prisma.js";
+import { asyncHandler } from "../../middleware/error.middleware.js";
+import { couponValidator } from "../validator/coupon.validation.js";
+import { SuccessResponse, ErrorResponse } from "../../utils/response.utils.js";
 
 export const createCoupon = asyncHandler(async (req, res, next) => {
   const data = couponValidator.parse(req.body);

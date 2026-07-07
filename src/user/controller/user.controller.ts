@@ -1,9 +1,9 @@
 import { parse } from "zod";
-import type { Prisma } from "../../../generated/prisma";
-import prisma from "../../config/prisma";
-import { asyncHandler } from "../../middleware/error.middleware";
-import { ErrorResponse, SuccessResponse } from "../../utils/response.utils";
-import { updateUsers } from "../validator/user.validation";
+import type { Prisma } from "../../../generated/prisma.js";
+import prisma from "../../config/prisma.js";
+import { asyncHandler } from "../../middleware/error.middleware.js";
+import { ErrorResponse, SuccessResponse } from "../../utils/response.utils.js";
+import { updateUsers } from "../validator/user.validation.js";
 
 export const getAlluser = asyncHandler(async (req, res, next) => {
   const page = Number(req.query.page) || 1;

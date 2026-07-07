@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import { statusCode } from "../types/types.js";
-import { ErrorResponse } from "../utils/response.utils.js";
 import { zodError } from "../validation/index.js";
 
 const errorMiddleware = (

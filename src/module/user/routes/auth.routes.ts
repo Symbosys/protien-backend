@@ -1,7 +1,7 @@
 import express from "express";
-import { requestOtp, verifyOtp, logout, adminRegister, adminLogin } from "../controller/auth.controller";
-import { getAlluser, getById, updateUser } from "../controller/user.controller";
-import { protect, optionalProtect } from "../../../middleware/auth.middleware";
+import { requestOtp, verifyOtp, logout, adminRegister, adminLogin } from "../controller/auth.controller.js";
+import { getAlluser, getById, updateUser } from "../controller/user.controller.js";
+import { protect, optionalProtect } from "../../../middleware/auth.middleware.js";
 
 const router = express.Router();
 

@@ -1,8 +1,8 @@
-import { uploadToCloudinary } from "../../config/cloudinary";
-import prisma from "../../config/prisma";
-import { asyncHandler } from "../../middleware/error.middleware";
-import { SuccessResponse } from "../../utils/response.utils";
-import { subCategoryValidation } from "../../user/validator/subCategory.validation";
+import { uploadToCloudinary } from "../../config/cloudinary.js";
+import prisma from "../../config/prisma.js";
+import { asyncHandler } from "../../middleware/error.middleware.js";
+import { SuccessResponse } from "../../utils/response.utils.js";
+import { subCategoryValidation } from "../../user/validator/subCategory.validation.js";
 
 export const subCatogaryCreate = asyncHandler(async (req, res, next) => {
   const data = subCategoryValidation.parse(req.body);

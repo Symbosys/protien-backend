@@ -1,21 +1,21 @@
 import express from "express";
 
-import errorMiddleware from "./middleware/error.middleware";
-import userrouter from "./module/user/routes/auth.routes";
-import catogaryrouter from "./module/category/routes/category.routes";
-import subcategoryrouter from "./module/sub-category/routes/subcategory.routes";
+import errorMiddleware from "./middleware/error.middleware.js";
+import userrouter from "./module/user/routes/auth.routes.js";
+import catogaryrouter from "./module/category/routes/category.routes.js";
+import subcategoryrouter from "./module/sub-category/routes/subcategory.routes.js";
 import cors from "cors";
 
-import productrouter from "./module/product/routes/product.routes";
-import attributerouter from "./module/user/routes/attribute.routes";
-import cartrouter from "./module/cart/routes/cart.routes";
-import wishlistrouter from "./module/wishlist/routes/wishlist.routes";
+import productrouter from "./module/product/routes/product.routes.js";
+import attributerouter from "./module/user/routes/attribute.routes.js";
+import cartrouter from "./module/cart/routes/cart.routes.js";
+import wishlistrouter from "./module/wishlist/routes/wishlist.routes.js";
 import orderrouter from "./module/order/routes/order.routes.js";
 import analyticsrouter from "./module/analytics/routes/analytics.routes.js";
-import bannerrouter from "./module/banner/routes/banner.routes";
-import couponrouter from "./coupon/routes/coupon.routes";
+import bannerrouter from "./module/banner/routes/banner.routes.js";
+import couponrouter from "./coupon/routes/coupon.routes.js";
 import chatsessionrouter from "./module/chatSession/routes/chatSession.routes.js";
-import reviewrouter from "./module/review/routes/review.routes";
+import reviewrouter from "./module/review/routes/review.routes.js";
 import offerrouter from "./module/offer/routes/offer.routes.js";
 import brandrouter from "./module/brand/routes/brand.routes.js";
 

@@ -6,7 +6,7 @@ import {
   updateBanner,
   deleteBanner
 } from "../controller/banner.controller";
-import upload from "../../../utils/multer";
+import upload from "../../../utils/multer.js";
 
 const router = express.Router();
 

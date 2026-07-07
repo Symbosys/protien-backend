@@ -1,10 +1,10 @@
-import type { Prisma } from "../../../../generated/prisma";
-import prisma from "../../../config/prisma";
-import { asyncHandler } from "../../../middleware/error.middleware";
-import { ErrorResponse, SuccessResponse } from "../../../utils/response.utils";
-import { CreateReviewValidator, ReplyReviewValidator } from "../validator/review.validator";
+import type { Prisma } from "../../../../generated/prisma.js";
+import prisma from "../../../config/prisma.js";
+import { asyncHandler } from "../../../middleware/error.middleware.js";
+import { ErrorResponse, SuccessResponse } from "../../../utils/response.utils.js";
+import { CreateReviewValidator, ReplyReviewValidator } from "../validator/review.validator.js";
 
-import type { AuthenticatedRequest } from "../../../middleware/auth.middleware";
+import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 
 export const getAllReviews = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
   const page = Number(req.query.page) || 1;

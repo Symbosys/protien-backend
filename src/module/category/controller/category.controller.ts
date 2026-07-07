@@ -1,8 +1,8 @@
-import prisma from "../../../config/prisma";
-import { asyncHandler } from "../../../middleware/error.middleware";
-import { categoryValidator } from "../../../user/validator/category.validation";
-import { SuccessResponse, ErrorResponse } from "../../../utils/response.utils";
-import { uploadToCloudinary } from "../../../config/cloudinary";
+import prisma from "../../../config/prisma.js";
+import { asyncHandler } from "../../../middleware/error.middleware.js";
+import { categoryValidator } from "../../../user/validator/category.validation.js";
+import { SuccessResponse, ErrorResponse } from "../../../utils/response.utils.js";
+import { uploadToCloudinary } from "../../../config/cloudinary.js";
 
 export const categoryCreate = asyncHandler(async (req, res, next) => {
   try {
