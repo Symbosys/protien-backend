@@ -563,3 +563,24 @@ model Offer {
 
   products Product[] // Many-to-many with Product
 }
+
+model Blog {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  content     String   @db.LongText
+  excerpt     String?  @db.Text
+  image       String?  @db.LongText
+  author      String   @default("Admin")
+  tags        Json?    // e.g. ["protein", "recipes", "fitness"]
+  isActive    Boolean  @default(true)
+  viewsCount  Int      @default(0)
+  readTime    Int?     // in minutes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("blogs")
+}
+
