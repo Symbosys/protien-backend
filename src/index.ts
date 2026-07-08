@@ -72,3 +72,5 @@ app.use("/api/blog", blogrouter);
 
 app.use(errorMiddleware);
 app.listen(4000, () => console.log("Server running on port 4000"));
+
+export default app;
