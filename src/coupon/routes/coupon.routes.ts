@@ -4,8 +4,8 @@ import {
   getAllCoupons,
   getCouponById,
   updateCoupon,
-  deleteCoupon
-} from "../controller/coupon.controller";
+  deleteCoupon,
+} from "../controller/coupon.controller.js";
 
 const router = express.Router();
 
