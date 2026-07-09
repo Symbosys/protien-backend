@@ -7,7 +7,7 @@ export const getAnalyticsQuerySchema = z.object({
 });
 
 export const trackEventSchema = z.object({
-  productId: z.string().uuid("Invalid product ID"),
+  productId: z.string().min(1, "Invalid product ID"),
   eventType: z.enum(["VIEW", "ADD_TO_CART", "PURCHASE"]),
   quantity: z.number().int().positive().optional().default(1),
   amount: z.number().positive().optional(),

@@ -25,7 +25,7 @@ export const createOfferSchema = z.object({
   startDate: z.string().datetime().optional().nullable(),
   endDate: z.string().datetime().optional().nullable(),
   isActive: z.boolean().default(true).optional(),
-  productIds: z.array(z.string().uuid("Invalid Product ID")).optional() // Array of product UUIDs to connect
+  productIds: z.array(z.string().min(1, "Invalid Product ID")).optional() // Array of product IDs to connect
 });
 
 export const updateOfferSchema = createOfferSchema.partial();
