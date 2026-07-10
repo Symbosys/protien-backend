@@ -247,6 +247,19 @@ export const getProductById = asyncHandler(async (req, res, next) => {
                         }
                     }
                 }
+            },
+            reviews: {
+                include: {
+                    user: {
+                        select: {
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: "desc"
+                }
             }
         },
     });
