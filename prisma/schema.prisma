@@ -30,6 +30,7 @@ model User {
   cart         Cart?
   wishlist     Wishlist[]
   orders       Order[]
+  addresses    Address[]
   chatSessions ChatSession[]
   reviews      Review[]
 }
@@ -266,6 +267,8 @@ model Order {
   orderNumber String @unique
   userId      String
   user        User   @relation(fields: [userId], references: [id])
+  addressId   String?
+  address     Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
 
   items OrderItem[]
 
@@ -300,6 +303,7 @@ model Order {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([addressId])
   @@index([orderNumber])
   @@index([status])
   @@index([paymentStatus])
@@ -582,5 +586,37 @@ model Blog {
   @@index([slug])
   @@index([isActive])
   @@map("blogs")
+}
+
+model Address {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name      String
+  mobile    String
+  pincode   String
+  locality  String?
+  address   String      @db.Text
+  city      String
+  state     String
+  longitude Float?
+  latitude  Float?
+  type      AddressType @default(HOME)
+  isDefault Boolean     @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+enum AddressType {
+  HOME
+  WORK
+  OTHER
 }
 
