@@ -294,6 +294,10 @@ model Order {
 
   note String? @db.Text
 
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+
   placedAt    DateTime  @default(now())
   shippedAt   DateTime?
   deliveredAt DateTime?
@@ -358,6 +362,7 @@ enum PaymentStatus {
 enum PaymentMethod {
   COD
   CARD
+  RAZORPAY
 }
 
 model StoreAnalytics {
