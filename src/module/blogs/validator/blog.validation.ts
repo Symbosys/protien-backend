@@ -9,5 +9,15 @@ export const blogValidator = z.object({
   author: z.string().max(100, "Author name is too long").trim().optional(),
   tags: z.array(z.string()).optional().nullable(),
   isActive: z.union([z.boolean(), z.enum(["true", "false"])]).optional(),
-  readTime: z.number().int().min(1, "Read time must be at least 1 minute").optional().nullable(),
+  readTime: z.preprocess(
+    (val) => {
+      if (val === "" || val === undefined || val === null || val === "null") return null;
+      if (typeof val === "string") {
+        const parsed = parseInt(val, 10);
+        return isNaN(parsed) ? val : parsed;
+      }
+      return val;
+    },
+    z.number().int().min(1, "Read time must be at least 1 minute").optional().nullable()
+  ),
 });
