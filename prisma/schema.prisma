@@ -297,6 +297,8 @@ model Order {
   razorpayOrderId   String?
   razorpayPaymentId String?
   razorpaySignature String?
+  cashfreeOrderId   String?
+  cashfreePaymentId String?
 
   placedAt    DateTime  @default(now())
   shippedAt   DateTime?
@@ -363,6 +365,7 @@ enum PaymentMethod {
   COD
   CARD
   RAZORPAY
+  CASHFREE
 }
 
 model StoreAnalytics {

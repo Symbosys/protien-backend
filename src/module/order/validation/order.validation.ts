@@ -26,9 +26,10 @@ export const updatePaymentStatusSchema = z.object({
 
 export const verifyPaymentSchema = z.object({
   orderId: z.string({ message: "Order ID is required" }).trim(),
-  razorpayOrderId: z.string({ message: "Razorpay Order ID is required" }).trim(),
-  razorpayPaymentId: z.string({ message: "Razorpay Payment ID is required" }).trim(),
-  razorpaySignature: z.string({ message: "Razorpay Signature is required" }).trim(),
+  razorpayOrderId: z.string().trim().optional(),
+  razorpayPaymentId: z.string().trim().optional(),
+  razorpaySignature: z.string().trim().optional(),
+  cashfreeOrderId: z.string().trim().optional(),
 });
 
 
