@@ -19,6 +19,9 @@ import reviewrouter from "./module/review/routes/review.routes.js";
 import offerrouter from "./module/offer/routes/offer.routes.js";
 import brandrouter from "./module/brand/routes/brand.routes.js";
 import blogrouter from "./module/blogs/routes/blog.routes.js";
+import adminrouter from "./module/admin/routes/analytics.routes.js";
+import paymentsRouter from "./module/admin/routes/payments.routes.js";
+import settingsRouter from "./module/admin/routes/settings.routes.js";
 
 const app = express();
 
@@ -69,6 +72,9 @@ app.use("/api/review", reviewrouter);
 app.use("/api/offer", offerrouter);
 app.use("/api/brand", brandrouter);
 app.use("/api/blog", blogrouter);
+app.use("/api/admin", adminrouter);
+app.use("/api/admin/payments", paymentsRouter);
+app.use("/api/admin/settings", settingsRouter);
 
 app.use(errorMiddleware);
 app.listen(4000, () => console.log("Server running on port 4000"));
