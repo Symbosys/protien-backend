@@ -29,6 +29,8 @@ const app = express();
 const allowedOrigins = [
   "https://protien-frontend.vercel.app",
   "https://protien-admin.vercel.app",
+  "https://admin.fuelandnutrients.com",
+  "https://fuelandnutrients.com"
 ];
 
 app.use(
