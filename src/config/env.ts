@@ -18,8 +18,17 @@ const ENV = {
     cloud_api_secret: process.env.CLOUD_API_SECRET,
     cloud_folder: process.env.CLOUD_FOLDER,
 
-    mode: process.env.NODE_ENV
+    mode: process.env.NODE_ENV,
     // AWS Credentials
+    
+    // Razorpay Credentials
+    RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || "",
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || "",
+
+    // Cashfree Credentials
+    CASHFREE_CLIENT_ID: process.env.CASHFREE_CLIENT_ID || "",
+    CASHFREE_CLIENT_SECRET: process.env.CASHFREE_CLIENT_SECRET || "",
+    CASHFREE_ENV: process.env.CASHFREE_ENV || "SANDBOX",
 }
 
 export default ENV;

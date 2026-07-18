@@ -76,6 +76,7 @@ app.use("/api/blog", blogrouter);
 app.use("/api/admin", adminrouter);
 app.use("/api/admin/payments", paymentsRouter);
 app.use("/api/admin/settings", settingsRouter);
+app.use("/api/address", addressrouter);
 
 app.use(errorMiddleware);
 app.listen(4000, () => console.log("Server running on port 4000"));
