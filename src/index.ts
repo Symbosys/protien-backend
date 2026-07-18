@@ -19,6 +19,7 @@ import reviewrouter from "./module/review/routes/review.routes.js";
 import offerrouter from "./module/offer/routes/offer.routes.js";
 import brandrouter from "./module/brand/routes/brand.routes.js";
 import blogrouter from "./module/blogs/routes/blog.routes.js";
+import addressrouter from "./module/address/routes/address.routes.js";
 import adminrouter from "./module/admin/routes/analytics.routes.js";
 import paymentsRouter from "./module/admin/routes/payments.routes.js";
 import settingsRouter from "./module/admin/routes/settings.routes.js";
