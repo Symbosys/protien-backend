@@ -10,6 +10,7 @@ export const createOrderSchema = z.object({
   shippingPincode: z.string({ message: "Shipping pincode is required" }).min(5, "Pincode must be at least 5 characters").trim(),
   paymentMethod: z.nativeEnum(PaymentMethod).optional().default("COD"),
   note: z.string().max(500, "Note cannot exceed 500 characters").optional(),
+  addressId: z.string().optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
