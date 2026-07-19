@@ -23,6 +23,7 @@ import addressrouter from "./module/address/routes/address.routes.js";
 import adminrouter from "./module/admin/routes/analytics.routes.js";
 import paymentsRouter from "./module/admin/routes/payments.routes.js";
 import settingsRouter from "./module/admin/routes/settings.routes.js";
+import dashboardRouter from "./module/admin/routes/dashboard.routes.js";
 
 const app = express();
 
@@ -78,6 +79,7 @@ app.use("/api/blog", blogrouter);
 app.use("/api/admin", adminrouter);
 app.use("/api/admin/payments", paymentsRouter);
 app.use("/api/admin/settings", settingsRouter);
+app.use("/api/admin/dashboard", dashboardRouter);
 app.use("/api/address", addressrouter);
 
 app.use(errorMiddleware);
