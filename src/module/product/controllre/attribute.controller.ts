@@ -3,6 +3,20 @@ import { ErrorResponse, SuccessResponse } from "../../../utils/response.utils.js
 import { statusCode } from "../../../types/types.js";
 import prisma from "../../../config/prisma.js";
 import { createAttributeSchema, addAttributeValuesSchema } from "../validation/attribute.validation.js";
+import { uploadToCloudinary } from "../../../config/cloudinary.js";
+
+async function processBase64Image(base64String: string, folder: string): Promise<string> {
+    if (!base64String || !base64String.startsWith('data:image')) {
+        return base64String; 
+    }
+    const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3 || !matches[2]) {
+        return base64String;
+    }
+    const imageBuffer = Buffer.from(matches[2] as string, 'base64');
+    const result = await uploadToCloudinary(imageBuffer, folder);
+    return result.secure_url;
+}
 
 export const getAllAttributes = asyncHandler(async (req, res, next) => {
     const attributes = await prisma.attribute.findMany({
@@ -32,7 +46,17 @@ export const createAttribute = asyncHandler(async (req, res, next) => {
         data: {
             name: validData.name,
             values: validData.values ? {
-                create: validData.values.map(val => ({ value: val }))
+                create: await Promise.all(validData.values.map(async (valObj) => {
+                    const valueStr = typeof valObj === 'string' ? valObj : valObj.value;
+                    let imageUrl: string | null = null;
+                    if (typeof valObj !== 'string' && valObj.image) {
+                        imageUrl = await processBase64Image(valObj.image, "products/attributes");
+                    }
+                    return {
+                        value: valueStr,
+                        image: imageUrl
+                    };
+                }))
             } : undefined
         },
         include: {
@@ -60,21 +84,28 @@ export const addAttributeValues = asyncHandler(async (req, res, next) => {
 
     // Upsert values to avoid duplicates
     const createdValues = await Promise.all(
-        validData.values.map(val => 
-            prisma.attributeValue.upsert({
+        validData.values.map(async (valObj) => {
+            const valueStr = typeof valObj === 'string' ? valObj : valObj.value;
+            let imageUrl: string | null = null;
+            if (typeof valObj !== 'string' && valObj.image) {
+                imageUrl = await processBase64Image(valObj.image, "products/attributes");
+            }
+
+            return prisma.attributeValue.upsert({
                 where: {
                     attributeId_value: {
                         attributeId: id,
-                        value: val
+                        value: valueStr
                     }
                 },
-                update: {},
+                update: imageUrl ? { image: imageUrl } : {},
                 create: {
                     attributeId: id,
-                    value: val
+                    value: valueStr,
+                    image: imageUrl
                 }
-            })
-        )
+            });
+        })
     );
 
     return SuccessResponse(res, "Attribute values added successfully", createdValues, statusCode.Created);
