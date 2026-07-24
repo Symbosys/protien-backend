@@ -597,6 +597,33 @@ model Blog {
   @@map("blogs")
 }
 
+model WebConfig {
+  id               String   @id @default(uuid())
+  // Business Profile
+  storeName        String   @default("")
+  businessEmail    String   @default("")
+  phoneNumber      String   @default("")
+  website          String?
+  storeDescription String?  @db.Text
+  logo             String?  @db.LongText
+
+  // Banking Details
+  bankName          String?
+  accountHolderName String?
+  accountNumber     String?
+  routingNumber     String?
+
+  // GST & Tax Info
+  gstNumber              String?
+  panNumber              String?
+  registeredBusinessName String?
+
+  // Pickup Addresses (Stored as structured JSON array of address objects)
+  pickupAddresses Json?
+
+  @@map("web_configs")
+}
+
 model Address {
   id     String @id @default(uuid())
   userId String
@@ -614,9 +641,10 @@ model Address {
   type      AddressType @default(HOME)
   isDefault Boolean     @default(false)
 
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
+  
   orders Order[]
 
   @@index([userId])

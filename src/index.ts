@@ -20,12 +20,18 @@ import offerrouter from "./module/offer/routes/offer.routes.js";
 import brandrouter from "./module/brand/routes/brand.routes.js";
 import blogrouter from "./module/blogs/routes/blog.routes.js";
 import addressrouter from "./module/address/routes/address.routes.js";
+import adminrouter from "./module/admin/routes/analytics.routes.js";
+import paymentsRouter from "./module/admin/routes/payments.routes.js";
+import settingsRouter from "./module/admin/routes/settings.routes.js";
+import dashboardRouter from "./module/admin/routes/dashboard.routes.js";
 
 const app = express();
 
 const allowedOrigins = [
   "https://protien-frontend.vercel.app",
   "https://protien-admin.vercel.app",
+  "https://admin.fuelandnutrients.com",
+  "https://fuelandnutrients.com"
 ];
 
 app.use(
@@ -70,6 +76,10 @@ app.use("/api/review", reviewrouter);
 app.use("/api/offer", offerrouter);
 app.use("/api/brand", brandrouter);
 app.use("/api/blog", blogrouter);
+app.use("/api/admin", adminrouter);
+app.use("/api/admin/payments", paymentsRouter);
+app.use("/api/admin/settings", settingsRouter);
+app.use("/api/admin/dashboard", dashboardRouter);
 app.use("/api/address", addressrouter);
 
 app.use(errorMiddleware);
