@@ -4,6 +4,7 @@ import { ErrorResponse, SuccessResponse } from "../../../utils/response.utils.js
 import { statusCode } from "../../../types/types.js";
 import { createOrderSchema, updateOrderStatusSchema, updatePaymentStatusSchema } from "../validation/order.validation.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
+import { getCashfreeOrder } from "../services/cashfree.service.js";
 
 // Helper to generate unique order number
 const generateOrderNumber = (): string => {
@@ -63,10 +64,12 @@ export const createOrder = asyncHandler<AuthenticatedRequest>(async (req, res, n
       throw new ErrorResponse("One of the products in your cart no longer exists", statusCode.Not_Found);
     }
 
-    // Determine unit price (discountPrice if available, otherwise regular price)
+    // Determine unit price (discountPrice if valid & non-zero, otherwise regular price)
     let unitPrice: number;
     if (variant) {
-      unitPrice = variant.discountPrice ? Number(variant.discountPrice) : Number(variant.price);
+      unitPrice = (variant.discountPrice && Number(variant.discountPrice) > 0 && Number(variant.discountPrice) < Number(variant.price))
+        ? Number(variant.discountPrice)
+        : Number(variant.price);
       
       // Stock validation for variant
       if (variant.quantity < item.quantity) {
@@ -81,7 +84,9 @@ export const createOrder = asyncHandler<AuthenticatedRequest>(async (req, res, n
         newQty: variant.quantity - item.quantity
       });
     } else {
-      unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+      unitPrice = (product.discountPrice && Number(product.discountPrice) > 0 && Number(product.discountPrice) < Number(product.price))
+        ? Number(product.discountPrice)
+        : Number(product.price);
 
       // Stock validation for main product
       if (product.quantity < item.quantity) {
@@ -117,7 +122,7 @@ export const createOrder = asyncHandler<AuthenticatedRequest>(async (req, res, n
   const shippingCharge = subtotal > 1500 ? 0 : 100;
   const tax = Number((subtotal * 0.05).toFixed(2)); // 5% tax
   const discount = 0; // standard 0 discount
-  const totalAmount = subtotal + shippingCharge + tax - discount;
+  const totalAmount = Number((subtotal + shippingCharge + tax - discount).toFixed(2));
 
   const orderNumber = generateOrderNumber();
 
@@ -218,8 +223,13 @@ export const getOrderById = asyncHandler<AuthenticatedRequest>(async (req, res, 
     throw new ErrorResponse("Order ID is required", statusCode.Bad_Request);
   }
 
-  const order = await prisma.order.findUnique({
-    where: { id },
+  let order = await prisma.order.findFirst({
+    where: {
+      OR: [
+        { id },
+        { orderNumber: id }
+      ]
+    },
     include: {
       items: true,
       address: true
@@ -233,6 +243,40 @@ export const getOrderById = asyncHandler<AuthenticatedRequest>(async (req, res, 
   // Verify ownership only if userId is provided (meaning it went through the protect middleware)
   if (userId && order.userId !== userId) {
     throw new ErrorResponse("Not authorized to view this order", statusCode.Forbidden);
+  }
+
+  // Auto-verify Cashfree order if UNPAID
+  if (order.paymentMethod?.toUpperCase() === "CASHFREE" && order.paymentStatus === "UNPAID") {
+    try {
+      const cfOrder = await getCashfreeOrder(order.orderNumber);
+      if (cfOrder && cfOrder.order_status === "PAID") {
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            status: "CONFIRMED",
+            paymentStatus: "PAID",
+            cashfreeOrderId: cfOrder.cf_order_id
+          },
+          include: {
+            items: true,
+            address: true
+          }
+        });
+      } else if (cfOrder && (cfOrder.order_status === "FAILED" || cfOrder.order_status === "CANCELLED")) {
+        order = await prisma.order.update({
+          where: { id: order.id },
+          data: {
+            paymentStatus: "FAILED"
+          },
+          include: {
+            items: true,
+            address: true
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Auto-verification of Cashfree order failed in details fetch:", err);
+    }
   }
 
   return SuccessResponse(res, "Order details retrieved successfully", order, statusCode.OK);

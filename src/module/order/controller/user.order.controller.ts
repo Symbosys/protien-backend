@@ -68,10 +68,12 @@ export const createUserOrder = asyncHandler<AuthenticatedRequest>(async (req, re
       throw new ErrorResponse("One of the products in your cart no longer exists", statusCode.Not_Found);
     }
 
-    // Determine unit price (discountPrice if available, otherwise regular price)
+    // Determine unit price (discountPrice if valid & non-zero, otherwise regular price)
     let unitPrice: number;
     if (variant) {
-      unitPrice = variant.discountPrice ? Number(variant.discountPrice) : Number(variant.price);
+      unitPrice = (variant.discountPrice && Number(variant.discountPrice) > 0 && Number(variant.discountPrice) < Number(variant.price))
+        ? Number(variant.discountPrice)
+        : Number(variant.price);
       
       // Stock validation for variant
       if (variant.quantity < item.quantity) {
@@ -87,7 +89,9 @@ export const createUserOrder = asyncHandler<AuthenticatedRequest>(async (req, re
         newQty: variant.quantity - item.quantity
       });
     } else {
-      unitPrice = product.discountPrice ? Number(product.discountPrice) : Number(product.price);
+      unitPrice = (product.discountPrice && Number(product.discountPrice) > 0 && Number(product.discountPrice) < Number(product.price))
+        ? Number(product.discountPrice)
+        : Number(product.price);
 
       // Stock validation for main product
       if (product.quantity < item.quantity) {
@@ -124,7 +128,7 @@ export const createUserOrder = asyncHandler<AuthenticatedRequest>(async (req, re
   const shippingCharge = subtotal > 1500 ? 0 : 100;
   const tax = Number((subtotal * 0.05).toFixed(2)); // 5% tax
   const discount = 0; // standard 0 discount
-  const totalAmount = subtotal + shippingCharge + tax - discount;
+  const totalAmount = Number((subtotal + shippingCharge + tax - discount).toFixed(2));
 
   const orderNumber = generateOrderNumber();
 
@@ -377,8 +381,13 @@ export const verifyPayment = asyncHandler<AuthenticatedRequest>(async (req, res,
   const validData = verifyPaymentSchema.parse(req.body);
   const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature, cashfreeOrderId } = validData;
 
-  let order = await prisma.order.findUnique({
-    where: { id: orderId },
+  let order = await prisma.order.findFirst({
+    where: {
+      OR: [
+        { id: orderId },
+        { orderNumber: orderId }
+      ]
+    },
     include: { items: true }
   });
 
@@ -391,12 +400,12 @@ export const verifyPayment = asyncHandler<AuthenticatedRequest>(async (req, res,
   }
 
   // Cashfree Verification
-  if (order.paymentMethod === "CASHFREE" || cashfreeOrderId) {
+  if (order.paymentMethod?.toUpperCase() === "CASHFREE" || cashfreeOrderId) {
     try {
       const cfOrder = await getCashfreeOrder(order.orderNumber);
       if (!cfOrder || cfOrder.order_status !== "PAID") {
         await prisma.order.update({
-          where: { id: orderId },
+          where: { id: order.id },
           data: {
             paymentStatus: "FAILED"
           }
@@ -405,7 +414,7 @@ export const verifyPayment = asyncHandler<AuthenticatedRequest>(async (req, res,
       }
 
       const confirmedOrder = await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           status: "CONFIRMED",
           paymentStatus: "PAID",
@@ -497,8 +506,13 @@ export const getUserOrderById = asyncHandler<AuthenticatedRequest>(async (req, r
     throw new ErrorResponse("Order ID is required", statusCode.Bad_Request);
   }
 
-  let order = await prisma.order.findUnique({
-    where: { id },
+  let order = await prisma.order.findFirst({
+    where: {
+      OR: [
+        { id },
+        { orderNumber: id }
+      ]
+    },
     include: {
       items: true,
       address: true
@@ -514,12 +528,12 @@ export const getUserOrderById = asyncHandler<AuthenticatedRequest>(async (req, r
   }
 
   // Auto-verify Cashfree order if UNPAID
-  if (order.paymentMethod === "CASHFREE" && order.paymentStatus === "UNPAID") {
+  if (order.paymentMethod?.toUpperCase() === "CASHFREE" && order.paymentStatus === "UNPAID") {
     try {
       const cfOrder = await getCashfreeOrder(order.orderNumber);
       if (cfOrder && cfOrder.order_status === "PAID") {
         order = await prisma.order.update({
-          where: { id },
+          where: { id: order.id },
           data: {
             status: "CONFIRMED",
             paymentStatus: "PAID",
@@ -530,9 +544,9 @@ export const getUserOrderById = asyncHandler<AuthenticatedRequest>(async (req, r
             address: true
           }
         });
-      } else if (cfOrder && cfOrder.order_status === "FAILED") {
+      } else if (cfOrder && (cfOrder.order_status === "FAILED" || cfOrder.order_status === "CANCELLED")) {
         order = await prisma.order.update({
-          where: { id },
+          where: { id: order.id },
           data: {
             paymentStatus: "FAILED"
           },
