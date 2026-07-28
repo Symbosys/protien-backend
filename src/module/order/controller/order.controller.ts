@@ -118,10 +118,11 @@ export const createOrder = asyncHandler<AuthenticatedRequest>(async (req, res, n
     });
   }
 
-  // Calculate fees (simple logic)
-  const shippingCharge = subtotal > 1500 ? 0 : 100;
-  const tax = Number((subtotal * 0.05).toFixed(2)); // 5% tax
-  const discount = 0; // standard 0 discount
+  // Calculate fees and discount (5% off for online pre-payment, 0% off for COD)
+  const isOnlinePayment = paymentMethod !== "COD";
+  const shippingCharge = 0;
+  const tax = 0; // 0 tax
+  const discount = isOnlinePayment ? Number((subtotal * 0.05).toFixed(2)) : 0;
   const totalAmount = Number((subtotal + shippingCharge + tax - discount).toFixed(2));
 
   const orderNumber = generateOrderNumber();
