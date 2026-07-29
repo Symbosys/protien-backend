@@ -70,9 +70,9 @@ export const createBrand = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllBrands = asyncHandler(async (req, res, next) => {
-  const { page = "1", limit = "10", search, isActive, sort = "newest" } = req.query;
+  const { page = "1", limit = "1000", search, isActive, sort = "newest" } = req.query;
   const pageNum = Math.max(1, Number(page));
-  const limitNum = Math.min(100, Math.max(1, Number(limit)));
+  const limitNum = Math.min(1000, Math.max(1, Number(limit)));
   const skip = (pageNum - 1) * limitNum;
 
   const where: any = {};

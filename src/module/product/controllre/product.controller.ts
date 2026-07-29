@@ -226,6 +226,7 @@ export const getAllProducts = asyncHandler(async (req, res, next) => {
       include: {
         category: true,
         subCategory: true,
+        brand: true,
         variants: {
           include: {
             attributeValues: {
@@ -266,6 +267,7 @@ export const getProductById = asyncHandler(async (req, res, next) => {
     include: {
       category: true,
       subCategory: true,
+      brand: true,
       variants: {
         include: {
           attributeValues: {

@@ -30,7 +30,7 @@ export const subCatogaryCreate = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllCategory = asyncHandler(async (req, res, next) => {
-  const { page = "1", limit = "10" } = req.query;
+  const { page = "1", limit = "1000" } = req.query;
   const pageNum = Number(page);
   const limitNum = Number(limit);
   const skip = (pageNum - 1) * limitNum;
