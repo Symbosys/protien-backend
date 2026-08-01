@@ -26,7 +26,7 @@ export const createProductSchema = z.object({
     .trim(),
   description: z
     .string()
-    .max(2000, "Description is too long")
+    .max(2500, "Description can be maximum 2500 characters")
     .trim()
     .optional(),
   image: z.string().min(1, "Main image is required"),
