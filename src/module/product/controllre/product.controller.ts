@@ -48,7 +48,10 @@ export const createProduct = asyncHandler(async (req, res, next) => {
         v.image = await processBase64Image(v.image, "products/variants");
       }
     }
-    const totalVariantQty = variants.reduce((sum, v) => sum + (Number(v.quantity) || 0), 0);
+    const totalVariantQty = variants.reduce(
+      (sum, v) => sum + (Number(v.quantity) || 0),
+      0,
+    );
     productData.quantity = Math.max(productData.quantity || 0, totalVariantQty);
   }
 
@@ -331,7 +334,10 @@ export const updateProduct = asyncHandler(async (req, res, next) => {
         v.image = await processBase64Image(v.image, "products/variants");
       }
     }
-    const totalVariantQty = variants.reduce((sum, v) => sum + (Number(v.quantity) || 0), 0);
+    const totalVariantQty = variants.reduce(
+      (sum, v) => sum + (Number(v.quantity) || 0),
+      0,
+    );
     productData.quantity = Math.max(productData.quantity || 0, totalVariantQty);
   }
 
