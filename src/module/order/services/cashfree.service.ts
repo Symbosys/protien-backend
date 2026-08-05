@@ -26,6 +26,11 @@ export interface CreateCashfreeOrderParams {
  * Creates a Cashfree payment gateway order session
  */
 export const createCashfreeOrder = async ({ orderId, amount, customer }: CreateCashfreeOrderParams) => {
+  let returnUrl = `${ENV.FRONTEND_URL}/order/${orderId}`;
+  if (ENV.CASHFREE_ENV === "PRODUCTION" && returnUrl.startsWith("http://")) {
+    returnUrl = returnUrl.replace("http://", "https://");
+  }
+
   const request = {
     order_amount: Number(amount.toFixed(2)),
     order_currency: "INR",
@@ -37,12 +42,21 @@ export const createCashfreeOrder = async ({ orderId, amount, customer }: CreateC
       customer_phone: customer.phone,
     },
     order_meta: {
-      return_url: `${ENV.FRONTEND_URL}/order/${orderId}`
+      return_url: returnUrl
     }
   };
 
-  const response = await cashfree.PGCreateOrder(request);
-  return response.data;
+  try {
+    const response = await cashfree.PGCreateOrder(request);
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.data) {
+      const cfError = error.response.data;
+      console.error("Cashfree PG API Error Details:", cfError);
+      throw new Error(cfError.message || cfError.code || JSON.stringify(cfError));
+    }
+    throw error;
+  }
 };
 
 /**
