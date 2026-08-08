@@ -6,6 +6,7 @@ import { createOrderSchema, verifyPaymentSchema } from "../validation/order.vali
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import { createRazorpayOrder, verifyRazorpaySignature } from "../services/razorpay.service.js";
 import { createCashfreeOrder, getCashfreeOrder } from "../services/cashfree.service.js";
+import { createIthinkOrder, getIthinkOrderDetails, trackIthinkOrder } from "../../../logistics/ithinkLogistics.service.js";
 
 // Helper to generate unique order number
 const generateOrderNumber = (): string => {
@@ -366,6 +367,10 @@ export const createUserOrder = asyncHandler<AuthenticatedRequest>(async (req, re
   }
 
   // Cash on Delivery (COD) Success Response
+  createIthinkOrder(order).catch((err) =>
+    console.error("iThink Logistics API error (COD):", err)
+  );
+
   return SuccessResponse(res, "Order placed successfully (Cash on Delivery)", order, statusCode.Created);
 });
 
@@ -426,6 +431,10 @@ export const verifyPayment = asyncHandler<AuthenticatedRequest>(async (req, res,
         }
       });
 
+      createIthinkOrder(confirmedOrder).catch((err) =>
+        console.error("iThink Logistics API error (Cashfree):", err)
+      );
+
       return SuccessResponse(res, "Payment verified and order confirmed successfully", confirmedOrder, statusCode.OK);
     } catch (err: any) {
       console.error("Cashfree verification error:", err);
@@ -467,6 +476,10 @@ export const verifyPayment = asyncHandler<AuthenticatedRequest>(async (req, res,
       items: true
     }
   });
+
+  createIthinkOrder(confirmedOrder).catch((err) =>
+    console.error("iThink Logistics API error (Razorpay):", err)
+  );
 
   return SuccessResponse(res, "Payment verified and order confirmed successfully", confirmedOrder, statusCode.OK);
 });
@@ -562,7 +575,75 @@ export const getUserOrderById = asyncHandler<AuthenticatedRequest>(async (req, r
     }
   }
 
-  return SuccessResponse(res, "Order details retrieved successfully", order, statusCode.OK);
+  // Fetch live order tracking details from iThink Logistics API
+  let ithinkDetails: any = null;
+  let trackingData: any = null;
+  try {
+    ithinkDetails = await getIthinkOrderDetails({ orderNo: order.orderNumber });
+    trackingData = await trackIthinkOrder(order.orderNumber);
+  } catch (err) {
+    console.error("Error fetching iThink order details:", err);
+  }
+
+  const responseData = {
+    ...order,
+    ithinkDetails,
+    trackingData
+  };
+
+  return SuccessResponse(res, "Order details retrieved successfully", responseData, statusCode.OK);
+});
+
+/**
+ * Public track order endpoint via Order Number
+ */
+export const trackOrderDetails = asyncHandler(async (req, res, next) => {
+  const { orderNumber } = req.params;
+  if (!orderNumber) {
+    throw new ErrorResponse("Order number is required", statusCode.Bad_Request);
+  }
+
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: [
+        { id: orderNumber },
+        { orderNumber: orderNumber }
+      ]
+    },
+    include: {
+      items: true
+    }
+  });
+
+  const targetQueryNumber = order ? order.orderNumber : orderNumber;
+
+  let trackingData: any = null;
+  let ithinkDetails: any = null;
+
+  try {
+    trackingData = await trackIthinkOrder(targetQueryNumber);
+  } catch (err) {
+    console.error("Error tracking iThink order:", err);
+  }
+
+  try {
+    ithinkDetails = await getIthinkOrderDetails({
+      orderNo: targetQueryNumber
+    });
+  } catch (err) {
+    console.error("Error fetching iThink order details:", err);
+  }
+
+  return SuccessResponse(
+    res,
+    "Order tracking details retrieved successfully",
+    {
+      order: order || null,
+      trackingData: trackingData,
+      ithinkDetails: ithinkDetails
+    },
+    statusCode.OK
+  );
 });
 
 /**

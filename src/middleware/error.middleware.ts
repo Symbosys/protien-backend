@@ -7,7 +7,7 @@ const errorMiddleware = (
   err: any,
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   // handle Zod error first before assigning default status codes
   if (err instanceof ZodError || err.name === "ZodError") {
@@ -41,11 +41,10 @@ const errorMiddleware = (
 
 export default errorMiddleware;
 
-
 type AsyncHandlerFunction<TReq extends Request> = (
   req: TReq,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => Promise<any>;
 
 export const asyncHandler =
@@ -53,6 +52,3 @@ export const asyncHandler =
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req as TReq, res, next)).catch(next);
   };
-
-
-

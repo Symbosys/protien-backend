@@ -5,6 +5,7 @@ import { statusCode } from "../../../types/types.js";
 import { createOrderSchema, updateOrderStatusSchema, updatePaymentStatusSchema } from "../validation/order.validation.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import { getCashfreeOrder } from "../services/cashfree.service.js";
+import { createIthinkOrder } from "../../../logistics/ithinkLogistics.service.js";
 
 // Helper to generate unique order number
 const generateOrderNumber = (): string => {
@@ -191,6 +192,10 @@ export const createOrder = asyncHandler<AuthenticatedRequest>(async (req, res, n
 
     return newOrder;
   });
+
+  createIthinkOrder(order).catch((err) =>
+    console.error("iThink Logistics API error:", err)
+  );
 
   return SuccessResponse(res, "Order placed successfully", order, statusCode.Created);
 });

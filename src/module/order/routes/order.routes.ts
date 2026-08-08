@@ -10,11 +10,15 @@ import {
   verifyPayment,
   getMyOrders,
   getUserOrderById,
-  cancelUserOrder
+  cancelUserOrder,
+  trackOrderDetails
 } from "../controller/user.order.controller.js";
 import { protect } from "../../../middleware/auth.middleware.js";
 
 const router = express.Router();
+
+// Public Order Tracking route
+router.get("/track/:orderNumber", trackOrderDetails);
 
 // User facing checkout/my-orders routes require authentication
 router.post("/checkout", protect, createUserOrder);
