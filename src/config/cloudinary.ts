@@ -18,7 +18,7 @@ export const uploadToCloudinary = (
   if (!ENV.cloud_name || !ENV.cloud_api_key || !ENV.cloud_api_secret) {
     return Promise.reject(new Error("Cloudinary credentials are missing. Please configure them in your .env file."));
   }
-  console.log("[DEBUG] uploadToCloudinary config:", cloudinary.config());
+  // console.log("[DEBUG] uploadToCloudinary config:", cloudinary.config());
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       { folder },
