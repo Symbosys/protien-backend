@@ -163,15 +163,64 @@ export const getAllProducts = asyncHandler(async (req, res, next) => {
     };
   }
 
-  // Search across name, description, brand, and category name
+  // Search across the product data that customers can use to identify an item.
+  // Product options live on variants, so they must be included as well.
   const searchStr = (search || q || query || searchQuery) as string;
   if (searchStr && searchStr.trim()) {
     const trimmed = searchStr.trim();
     where.OR = [
       { name: { contains: trimmed } },
       { description: { contains: trimmed } },
-      { brand: { name: { contains: trimmed } } },
-      { category: { name: { contains: trimmed } } },
+      { sku: { contains: trimmed } },
+      { seoTitle: { contains: trimmed } },
+      { seoDescription: { contains: trimmed } },
+      { seoKeywords: { contains: trimmed } },
+      {
+        brand: {
+          is: {
+            OR: [
+              { name: { contains: trimmed } },
+              { slug: { contains: trimmed } },
+              { description: { contains: trimmed } },
+            ],
+          },
+        },
+      },
+      {
+        category: {
+          is: {
+            OR: [
+              { name: { contains: trimmed } },
+              { slug: { contains: trimmed } },
+              { description: { contains: trimmed } },
+            ],
+          },
+        },
+      },
+      {
+        subCategory: {
+          is: {
+            OR: [
+              { name: { contains: trimmed } },
+              { description: { contains: trimmed } },
+            ],
+          },
+        },
+      },
+      {
+        variants: {
+          some: {
+            OR: [
+              { sku: { contains: trimmed } },
+              {
+                attributeValues: {
+                  some: { value: { contains: trimmed } },
+                },
+              },
+            ],
+          },
+        },
+      },
     ];
   }
 
