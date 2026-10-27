@@ -31,7 +31,11 @@ const allowedOrigins = [
   "https://protien-frontend.vercel.app",
   "https://protien-admin.vercel.app",
   "https://admin.fuelandnutrients.com",
-  "https://fuelandnutrients.com"
+  "https://fuelandnutrients.com",
+  "https://www.fuelandnutrients.com",
+  "http://fuelandnutrients.com",
+  "http://www.fuelandnutrients.com",
+  "http://admin.fuelandnutrients.com"
 ];
 
 app.use(
@@ -42,6 +46,8 @@ app.use(
       
       if (
         allowedOrigins.includes(origin) ||
+        /^https?:\/\/([a-zA-Z0-9-]+\.)?fuelandnutrients\.com$/.test(origin) ||
+        /^https?:\/\/protien-(frontend|admin)[a-zA-Z0-9-]*\.vercel\.app$/.test(origin) ||
         /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin)
       ) {
         callback(null, true);
