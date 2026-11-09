@@ -5,7 +5,15 @@ import { statusCode } from "../../../types/types.js";
 import { createOrderSchema, updateOrderStatusSchema, updatePaymentStatusSchema } from "../validation/order.validation.js";
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import { getCashfreeOrder } from "../services/cashfree.service.js";
-import { createIthinkOrder } from "../../../logistics/ithinkLogistics.service.js";
+import {
+  createIthinklogisticsOrder,
+  createIthinkOrder,
+  cancelIthinklogisticsOrder,
+  createIthinklogisticsReturnOrder,
+  updateIthinklogisticsOrderAddress,
+  getIthinkOrderDetails,
+  trackIthinkOrder,
+} from "../../../logistics/ithinkLogistics.service.js";
 
 // Helper to generate unique order number
 const generateOrderNumber = (): string => {
@@ -404,16 +412,22 @@ export const updateOrderStatus = asyncHandler<AuthenticatedRequest>(async (req, 
     }
   } else if (status === "CANCELLED") {
     statusUpdateData.cancelledAt = new Date();
+  } else if (status === "RETURNED") {
+    statusUpdateData.status = "RETURNED";
+    if (req.body.returnReason) {
+      statusUpdateData.returnReason = req.body.returnReason;
+    }
   }
 
-  // Handle transaction if transition is to CANCELLED (must restore stock)
+  // Handle transaction if transition is to CANCELLED or RETURNED (must restore stock)
   let updatedOrder;
-  if (status === "CANCELLED" && order.status !== "CANCELLED") {
+  if ((status === "CANCELLED" || status === "RETURNED") && order.status !== status) {
     updatedOrder = await prisma.$transaction(async (tx) => {
       // 1. Update order
       const resOrder = await tx.order.update({
         where: { id },
-        data: statusUpdateData
+        data: statusUpdateData,
+        include: { items: true },
       });
 
       // 2. Restore stocks
@@ -422,26 +436,37 @@ export const updateOrderStatus = asyncHandler<AuthenticatedRequest>(async (req, 
           await tx.productVariant.update({
             where: { id: item.variantId },
             data: {
-              quantity: item.variant.quantity + item.quantity
-            }
+              quantity: item.variant.quantity + item.quantity,
+            },
           });
         } else if (item.product) {
           await tx.product.update({
             where: { id: item.productId },
             data: {
-              quantity: item.product.quantity + item.quantity
-            }
+              quantity: item.product.quantity + item.quantity,
+            },
           });
         }
       }
 
       return resOrder;
     });
+
+    if (status === "CANCELLED") {
+      cancelIthinklogisticsOrder(order).catch((err) =>
+        console.error("[iThink Logistics] Admin cancel error:", err)
+      );
+    } else if (status === "RETURNED") {
+      createIthinklogisticsReturnOrder(order, undefined, req.body.returnReason).catch((err) =>
+        console.error("[iThink Logistics] Admin return order error:", err)
+      );
+    }
   } else {
     // Standard update
     updatedOrder = await prisma.order.update({
       where: { id },
-      data: statusUpdateData
+      data: statusUpdateData,
+      include: { items: true },
     });
   }
 
@@ -486,4 +511,114 @@ export const getAllOrders = asyncHandler<AuthenticatedRequest>(async (req, res, 
   });
 
   return SuccessResponse(res, "All orders retrieved successfully", orders, statusCode.OK);
+});
+
+// 8. Manually trigger iThink Logistics shipment creation (Admin/Vendor function)
+export const shipOrderViaIthink = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
+  const { id } = req.params;
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new ErrorResponse("Order not found", statusCode.Not_Found);
+  }
+
+  const result = await createIthinklogisticsOrder(order);
+  return SuccessResponse(res, "iThink Logistics shipment initiated", result, statusCode.OK);
+});
+
+// 9. Manually initiate iThink Logistics return order (Admin/Vendor function)
+export const initiateAdminReturnOrder = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
+  const { id } = req.params;
+  const { returnReason } = req.body;
+  const reasonText = (returnReason || "Admin initiated return").trim();
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: {
+        include: {
+          product: true,
+          variant: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new ErrorResponse("Order not found", statusCode.Not_Found);
+  }
+
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    const resOrder = await tx.order.update({
+      where: { id },
+      data: {
+        status: "RETURNED",
+        returnReason: reasonText,
+      },
+      include: { items: true },
+    });
+
+    for (const item of order.items) {
+      if (item.variantId && item.variant) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { quantity: item.variant.quantity + item.quantity },
+        });
+      } else if (item.product) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { quantity: item.product.quantity + item.quantity },
+        });
+      }
+    }
+
+    return resOrder;
+  });
+
+  const result = await createIthinklogisticsReturnOrder(order, undefined, reasonText);
+  return SuccessResponse(res, "iThink Logistics return order created successfully", { order: updatedOrder, result }, statusCode.OK);
+});
+
+// 10. Update order address and sync to iThink Logistics (Admin function)
+export const updateAdminOrderAddress = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
+  const { id } = req.params;
+  const {
+    shippingName,
+    shippingPhone,
+    shippingAddress,
+    shippingCity,
+    shippingState,
+    shippingPincode,
+  } = req.body;
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new ErrorResponse("Order not found", statusCode.Not_Found);
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id },
+    data: {
+      shippingName: shippingName || order.shippingName,
+      shippingPhone: shippingPhone || order.shippingPhone,
+      shippingAddress: shippingAddress || order.shippingAddress,
+      shippingCity: shippingCity || order.shippingCity,
+      shippingState: shippingState || order.shippingState,
+      shippingPincode: shippingPincode || order.shippingPincode,
+    },
+    include: { items: true },
+  });
+
+  updateIthinklogisticsOrderAddress(order, req.body).catch((err) =>
+    console.error("[iThink Logistics] Address update sync error:", err)
+  );
+
+  return SuccessResponse(res, "Order address updated successfully", updatedOrder, statusCode.OK);
 });

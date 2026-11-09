@@ -6,7 +6,15 @@ import { createOrderSchema, verifyPaymentSchema } from "../validation/order.vali
 import type { AuthenticatedRequest } from "../../../middleware/auth.middleware.js";
 import { createRazorpayOrder, verifyRazorpaySignature } from "../services/razorpay.service.js";
 import { createCashfreeOrder, getCashfreeOrder } from "../services/cashfree.service.js";
-import { createIthinkOrder, getIthinkOrderDetails, trackIthinkOrder } from "../../../logistics/ithinkLogistics.service.js";
+import {
+  createIthinklogisticsOrder,
+  createIthinkOrder,
+  cancelIthinklogisticsOrder,
+  updateIthinklogisticsOrderAddress,
+  createIthinklogisticsReturnOrder,
+  getIthinkOrderDetails,
+  trackIthinkOrder,
+} from "../../../logistics/ithinkLogistics.service.js";
 
 // Helper to generate unique order number
 const generateOrderNumber = (): string => {
@@ -716,5 +724,158 @@ export const cancelUserOrder = asyncHandler<AuthenticatedRequest>(async (req, re
     return updatedOrder;
   });
 
+  // Cancel in iThink Logistics asynchronously
+  cancelIthinklogisticsOrder(order).catch((err) =>
+    console.error("[iThink Logistics] Cancel error:", err)
+  );
+
   return SuccessResponse(res, "Order cancelled successfully", cancelledOrder, statusCode.OK);
+});
+
+/**
+ * 6. Return order by user (only if DELIVERED)
+ * PUT /api/order/:id/return
+ */
+export const returnUserOrder = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ErrorResponse("Not authorized", statusCode.Unauthorized);
+  }
+
+  const { id } = req.params;
+  const { reason, returnReason } = req.body;
+  const reasonText = (reason || returnReason || "Customer requested return").trim();
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: {
+      items: {
+        include: {
+          product: true,
+          variant: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new ErrorResponse("Order not found", statusCode.Not_Found);
+  }
+
+  if (order.userId !== userId) {
+    throw new ErrorResponse("Not authorized to return this order", statusCode.Forbidden);
+  }
+
+  if (order.status !== "DELIVERED") {
+    throw new ErrorResponse("Only delivered orders can be returned", statusCode.Bad_Request);
+  }
+
+  // Transaction: update order to RETURNED and restore item inventory stock
+  const returnedOrder = await prisma.$transaction(async (tx) => {
+    const updatedOrder = await tx.order.update({
+      where: { id },
+      data: {
+        status: "RETURNED",
+        returnReason: reasonText,
+        note: order.note ? `${order.note} | Return Reason: ${reasonText}` : `Return Reason: ${reasonText}`,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    for (const item of order.items) {
+      if (item.variantId && item.variant) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            quantity: item.variant.quantity + item.quantity,
+          },
+        });
+      } else if (item.product) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: {
+            quantity: item.product.quantity + item.quantity,
+          },
+        });
+      }
+    }
+
+    return updatedOrder;
+  });
+
+  // Call iThink Logistics reverse return order creation asynchronously
+  createIthinklogisticsReturnOrder(order, (req.user as any)?.email, reasonText).catch((err: any) =>
+    console.error("[iThink Logistics] Reverse return creation error:", err)
+  );
+
+  return SuccessResponse(res, "Order return requested successfully", returnedOrder, statusCode.OK);
+});
+
+/**
+ * 7. Update shipping address before order is shipped (only PENDING or CONFIRMED)
+ * PUT /api/order/:id/address
+ */
+export const updateUserOrderAddress = asyncHandler<AuthenticatedRequest>(async (req, res, next) => {
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new ErrorResponse("Not authorized", statusCode.Unauthorized);
+  }
+
+  const { id } = req.params;
+  const {
+    shippingName,
+    shippingPhone,
+    shippingAddress,
+    shippingCity,
+    shippingState,
+    shippingPincode,
+  } = req.body;
+
+  if (!shippingAddress || !shippingCity || !shippingState || !shippingPincode) {
+    throw new ErrorResponse("Address, city, state and pincode are required", statusCode.Bad_Request);
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+
+  if (!order) {
+    throw new ErrorResponse("Order not found", statusCode.Not_Found);
+  }
+
+  if (order.userId !== userId) {
+    throw new ErrorResponse("Not authorized to update this order", statusCode.Forbidden);
+  }
+
+  if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
+    throw new ErrorResponse(
+      `Cannot update address because order is already ${order.status.toLowerCase()}`,
+      statusCode.Bad_Request
+    );
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id },
+    data: {
+      shippingName: shippingName || order.shippingName,
+      shippingPhone: shippingPhone || order.shippingPhone,
+      shippingAddress,
+      shippingCity,
+      shippingState,
+      shippingPincode,
+    },
+    include: {
+      items: true,
+    },
+  });
+
+  // Sync to iThink Logistics if already created
+  updateIthinklogisticsOrderAddress(order, req.body).catch((err) =>
+    console.error("[iThink Logistics] Address update sync error:", err)
+  );
+
+  return SuccessResponse(res, "Order address updated successfully", updatedOrder, statusCode.OK);
 });

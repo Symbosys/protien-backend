@@ -301,6 +301,11 @@ model Order {
   cashfreeOrderId   String?
   cashfreePaymentId String?
 
+  ithinklogisticsOrderId    String?
+  ithinklogisticsShipmentId String?
+  waybill                   String?
+  returnReason              String?   @db.Text
+
   placedAt    DateTime  @default(now())
   shippedAt   DateTime?
   deliveredAt DateTime?

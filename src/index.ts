@@ -68,6 +68,7 @@ app.use("/api/attribute", attributerouter);
 app.use("/api/cart", cartrouter);
 app.use("/api/wishlist", wishlistrouter);
 app.use("/api/order", orderrouter);
+app.use("/api/orders", orderrouter);
 app.use("/api/analytics", analyticsrouter);
 app.use("/api/banner", bannerrouter);
 app.use("/api/coupon", couponrouter);
